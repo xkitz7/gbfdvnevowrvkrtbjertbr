@@ -1,1 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Win2K Desktop</title>
+    <!-- Load Tailwind CSS for utility base, though custom CSS will override heavily for the retro look -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter as a fallback, but specify a classic Windows font stack -->
+    <style>
+        /* Classic Windows Font Stack */
+        :root {
+            font-family: 'Tahoma', 'Arial', 'Helvetica', 'sans-serif';
+            font-size: 11px;
+        }
 
+        /* 3D Border Mixins - Crucial for the Windows 98/2000 look */
+        .window-style {
+            background-color: #C0C0C0;
+            border-style: solid;
+            border-width: 1px;
+            border-color: #FFFFFF #808080 #808080 #FFFFFF;
+            box-shadow: 1px 1px 0 #000000;
+        }
+
+        .button-style {
+            background-color: #C0C0C0;
+            border-style: solid;
+            border-width: 2px;
+            border-color: #FFFFFF #000000 #000000 #FFFFFF;
+            padding: 2px 6px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .button-style:active {
+            border-color: #000000 #FFFFFF #FFFFFF #000000;
+            padding: 3px 5px 1px 7px; /* Shift content down and right to simulate pressing */
+        }
+
+        .inset-style {
+            border-style: solid;
+            border-width: 2px;
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            background-color: #FFFFFF;
+        }
+
+        body {
+            background-color: #008080; /* Classic Teal Desktop */
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Taskbar Styles */
+        .taskbar {
+            height: 28px;
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #C0C0C0;
+            border-top: 1px solid #FFFFFF;
+        }
+
+        .start-button {
+            background-color: #C0C0C0;
+            padding: 1px 6px 1px 3px;
+            margin-left: 2px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            line-height: 1;
+            border-style: solid;
+            border-width: 2px;
+            border-color: #FFFFFF #000000 #000000 #FFFFFF;
+            box-shadow: none;
+            cursor: pointer;
+        }
+
+        .start-button:active {
+            border-color: #000000 #FFFFFF #FFFFFF #000000;
+        }
+
+        .start-text {
+            color: #000080; /* Dark blue text */
+        }
+
+        .taskbar-clock {
+            padding: 0 6px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            background-color: #C0C0C0;
+            /* Inset style for the clock area */
+            border-style: solid;
+            border-width: 2px;
+            border-color: #808080 #FFFFFF #FFFFFF #808080;
+            box-shadow: none;
+        }
+
+        /* Window Specific Styles */
+        .window {
+            position: absolute;
+            min-width: 250px;
+            min-height: 200px;
+            width: 500px; /* Default normal width */
+            height: 350px; /* Default normal height */
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            /* Use window-style for 3D border */
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            /* Resizing is handled by JS on the whole window element boundary */
+            resize: none; 
+        }
+
+        .title-bar {
+            background: linear-gradient(90deg, #0000AA, #0000AA); /* Solid Blue */
+            color: white;
+            padding: 2px 4px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0; /* Title bar should not shrink */
+            cursor: grab;
+        }
+
+        .title-bar-buttons {
+            display: flex;
+            gap: 2px;
+        }
+
+        .title-bar-button {
+            width: 16px;
+            height: 14px;
+            line-height: 12px;
+            background-color: #C0C0C0;
+            color: black;
+            font-size: 10px;
+            border-style: solid;
+            border-width: 1px;
+            border-color: #FFFFFF #000000 #000000 #FFFFFF;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .title-bar-button:active {
+            border-color: #000000 #FFFFFF #FFFFFF #000000;
+        }
+
+        .window-content {
+            padding: 8px;
+            background-color: #C0C0C0;
+            flex-grow: 1; /* Allow content to fill remaining space */
+            overflow: auto; /* Scroll if content overflows */
+        }
+
+        .menu-bar {
+            display: flex;
+            background-color: #C0C0C0;
+            padding: 1px 2px;
+            border-bottom: 1px solid #808080;
+            flex-shrink: 0;
+        }
+
+        .menu-item {
+            padding: 0 8px;
+        }
+        
+        .main-content-area {
+            min-height: 150px;
+            padding: 4px;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        
+        /* Utility styles for the content */
+        .link-classic {
+            color: #0000AA;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .link-classic:hover {
+            text-decoration: underline;
+        }
+        
+        /* Taskbar Entry Styles */
+        .taskbar-entry {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .taskbar-active {
+            /* Active/focused window style (reverses the 3D look) */
+            border-style: solid;
+            border-width: 2px;
+            border-color: #000000 #FFFFFF #FFFFFF #000000;
+            background-color: #C0C0C0;
+            padding: 0 7px 0 9px; /* Adjust padding to match border shift */
+        }
+        
+        .taskbar-inactive {
+            /* Inactive/minimized window style */
+            border-style: solid;
+            border-width: 2px;
+            border-color: #FFFFFF #000000 #000000 #FFFFFF;
+            background-color: #C0C0C0;
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+            padding: 2px;
+            min-width: 150px;
+            background-color: #C0C0C0;
+            font-size: 11px;
+            z-index: 1000; /* Must be above everything */
+            position: absolute;
+            cursor: default;
+        }
+
+        .context-menu-item {
+            padding: 1px 18px 1px 18px;
+            white-space: nowrap;
+            cursor: default;
+        }
+
+        .context-menu-item:hover {
+            background-color: #0000AA;
+            color: white;
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            margin: 2px 0;
+            border-top: 1px solid #808080;
+            border-bottom: 1px solid #FFFFFF;
+        }
+
+        /* Desktop Selection Box Styles */
+        .desktop-selection-box {
+            position: absolute;
+            border: 1px dashed #FFFFFF;
+            background-color: rgba(0, 0, 170, 0.2); /* Semi-transparent blue */
+            z-index: 40; /* Below the main window */
+            pointer-events: none; /* Allows mouse events to pass through to the desktop */
+        }
+
+        /* BSOD Styles */
+        .bsod {
+            font-family: 'Courier New', monospace;
+            line-height: 1.1;
+            font-size: 16px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0000AA; /* Classic Blue */
+            color: #CCCCCC; /* Light gray text */
+            z-index: 999999;
+            padding: 10px 10px 10px 20px;
+            white-space: pre-wrap;
+            overflow: hidden;
+            text-shadow: 0 0 1px #CCCCCC; /* Subtle glow effect */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Desktop Area -->
+    <div id="desktop" class="flex-grow">
+        <!-- Selection Box for dragging selection -->
+        <div id="selectionBox" class="desktop-selection-box hidden"></div>
+
+        <!-- Right-Click Context Menu -->
+        <div id="desktopContextMenu" class="context-menu window-style hidden">
+            <div class="context-menu-item">Active Desktop</div>
+            <div class="context-menu-separator"></div>
+            <div class="context-menu-item" onclick="showMessage('You clicked Arrange Icons by', false); hideContextMenu();">Arrange Icons By</div>
+            <div class="context-menu-item" onclick="showMessage('You clicked Line up Icons', false); hideContextMenu();">Line up Icons</div>
+            <div class="context-menu-separator"></div>
+            <!-- This button now triggers the BSOD -->
+            <div class="context-menu-item" onclick="triggerBSOD(); hideContextMenu();">New Window (Restore)</div>
+            <div class="context-menu-item" onclick="showMessage('You clicked Properties', false); hideContextMenu();">Properties</div>
+        </div>
+
+        <!-- Application Window -->
+        <div id="myWindow" class="window window-style">
+            <!-- Title Bar -->
+            <div id="titleBar" class="title-bar">
+                <span><span class="px-1">📄</span> C:\Documents and Settings\retro-browser</span>
+                <div class="title-bar-buttons">
+                    <button class="title-bar-button" onclick="minimizeWindow()">_</button>
+                    <button id="maximizeButton" class="title-bar-button" onclick="maximizeWindow()">🗗</button>
+                    <!-- Changed onclick to promptClose() -->
+                    <button class="title-bar-button" style="color: red;" onclick="promptClose()">X</button>
+                </div>
+            </div>
+
+            <!-- Menu Bar -->
+            <div class="menu-bar">
+                <span class="menu-item"><u>F</u>ile</span>
+                <span class="menu-item"><u>E</u>dit</span>
+                <span class="menu-item"><u>V</u>iew</span>
+                <span class="menu-item"><u>H</u>elp</span>
+            </div>
+
+            <!-- Content Area -->
+            <div class="window-content">
+                <p>Welcome to the Win2K retro experience! This HTML file uses pure CSS techniques to replicate the iconic Windows 2000 look and feel.</p>
+                <div class="main-content-area inset-style">
+                    <p><strong>C:\&gt; This is the content area.</strong></p>
+                    <p>Notice the chiseled 3D borders (`border-style: solid`, with white/light borders on top/left and dark borders on bottom/right) which define the entire aesthetic.</p>
+                    <p>You can now **drag the window border or corner to resize** the application, and the **minimize/maximize/close** buttons are fully functional!</p>
+                    <p>Try clicking this <a href="#" class="link-classic" onclick="showMessage('You clicked a link. Hello World!', false);">link</a> or the <button class="button-style" onclick="showMessage('Button pressed!', false);">Classic Button</button>.</p>
+                    <p>And now, **try right-clicking the desktop** or **clicking and dragging on the teal background**!</p>
+                    <p class="mt-4 text-red-700 font-bold">WARNING: Clicking "New Window (Restore)" in the right-click menu will cause a fatal system error.</p>
+                    
+                    <!-- Updated Message Box for Confirmation -->
+                    <div id="messageBox" class="window-style mt-4 p-4 hidden" style="width: 300px; margin: 20px auto;">
+                        <div class="title-bar mb-2 cursor-default" style="background: linear-gradient(90deg, #A80000, #A80000);">
+                             <span>⚠️ Warning</span>
+                        </div>
+                        <p id="messageText" class="mb-4 text-center text-black"></p>
+                        <!-- Yes/No buttons for confirmation -->
+                        <div id="messageActions" class="flex justify-center space-x-4">
+                            <!-- Yes button calls the final closing function -->
+                            <button id="msgYesButton" class="button-style w-20" onclick="performClose()">Yes</button>
+                            <!-- No button simply hides the message box (cancels close) -->
+                            <button id="msgNoButton" class="button-style w-20" onclick="hideMessage()">No</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Removed explicit resize handle element - resizing is now border/corner based -->
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <!-- Start Button -->
+        <button class="start-button" onclick="restoreWindow()">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm0 17c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7zM10 9l5 3-5 3V9z"/>
+            </svg>
+            <span class="start-text">Start</span>
+        </button>
+
+        <!-- Taskbar Entries Container -->
+        <div class="flex items-center space-x-1 flex-grow h-full overflow-hidden ml-2">
+            <!-- Retro Browser Taskbar Entry -->
+            <div id="windowTaskbarEntry" class="taskbar-entry taskbar-inactive" onclick="toggleWindow()">
+                <span class="truncate">Retro Browser - Index.html</span>
+            </div>
+        </div>
+
+        <!-- Clock Area -->
+        <div class="taskbar-clock">
+            <span id="currentTime">10:00 AM</span>
+        </div>
+    </div>
+    
+    <!-- BLUE SCREEN OF DEATH (BSOD) Overlay - Updated Content for Windows ME -->
+    <div id="bsod" class="bsod hidden">
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <!-- The classic Win 9x/ME fatal exception message, centered -->
+        <p style="text-align: center; font-weight: bold; color: white;">A fatal exception OE has occurred at 0028:C0011E36 in VXD VMM(01)</p>
+        <p style="text-align: center; font-weight: bold; color: white;">+00010E36. The current application will be terminated.</p>
+        <p>&#32;</p>
+        <p style="text-align: center;">* Press any key to terminate the current application.</p>
+        <p style="text-align: center;">* Press CTRL+ALT+DEL again to restart your computer. You will lose any unsaved information in all applications.</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <p>&#32;</p>
+        <!-- The command prompt line which is characteristic of the error screen -->
+        <p style="text-align: center; color: white; background-color: #AAAAAA; font-weight: bold; padding: 2px;">
+            Click &lt;OK&gt; to restart the computer.
+        </p>
+    </div>
+
+
+    <script>
+        // --- Firebase/Canvas Setup (Compliance placeholder) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // --- DOM Elements ---
+        const myWindow = document.getElementById('myWindow');
+        const titleBar = document.getElementById('titleBar');
+        const windowTaskbarEntry = document.getElementById('windowTaskbarEntry');
+        // Desktop and Context Menu Elements
+        const desktop = document.getElementById('desktop');
+        const selectionBox = document.getElementById('selectionBox');
+        const contextMenu = document.getElementById('desktopContextMenu');
+        // BSOD Element
+        const bsodScreen = document.getElementById('bsod');
+
+        // --- State Variables ---
+        let isDragging = false;
+        let isResizing = false;
+        let isSelecting = false;
+        let startSelect = { x: 0, y: 0 };
+        let currentSelect = { x: 0, y: 0 };
+        let menuVisible = false;
+        let clockInterval; // To store the clock interval handle
+        
+        let offset = { x: 0, y: 0 };
+        let windowState = 'normal'; // States: 'normal', 'minimized', 'maximized', 'closed'
+        let savedPosition = { x: 0, y: 0 };
+        let savedSize = { w: 500, h: 350 }; // Initial size
+        const minWidth = 250;
+        const minHeight = 200;
+        
+        // Resizing variables
+        let resizeDirection = '';
+        const BORDER_TOLERANCE = 8; // Pixels from the edge/corner to detect a drag
+
+
+        // --- BSOD Function ---
+        function triggerBSOD() {
+            // Stop all interactivity
+            isDragging = false;
+            isResizing = false;
+            isSelecting = false;
+            hideContextMenu();
+            hideMessage();
+            
+            // Clear the clock interval
+            clearInterval(clockInterval);
+
+            // Hide everything else and show the BSOD
+            bsodScreen.classList.remove('hidden');
+            
+            // Add a simple listener to reset the app (in a non-classic way)
+            document.addEventListener('keydown', handleBSODKey, { once: true });
+            document.addEventListener('mousedown', handleBSODKey, { once: true });
+        }
+        
+        function handleBSODKey() {
+            // Hides BSOD and reloads the page to "recover"
+            bsodScreen.classList.add('hidden');
+            window.location.reload(); 
+        }
+
+        // --- Utility Functions ---
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        function updateTaskbarEntry(state) {
+            windowTaskbarEntry.classList.remove('taskbar-inactive', 'taskbar-active', 'hidden');
+            if (state === 'closed') {
+                windowTaskbarEntry.classList.add('hidden');
+            } else if (state === 'normal' || state === 'maximized') {
+                windowTaskbarEntry.classList.remove('hidden');
+                windowTaskbarEntry.classList.add('taskbar-active');
+            } else if (state === 'minimized') {
+                windowTaskbarEntry.classList.remove('hidden');
+                windowTaskbarEntry.classList.add('taskbar-inactive');
+            }
+        }
+
+        function saveCurrentState() {
+            if (windowState === 'normal') {
+                savedPosition.x = myWindow.offsetLeft;
+                savedPosition.y = myWindow.offsetTop;
+                savedSize.w = myWindow.offsetWidth;
+                savedSize.h = myWindow.offsetHeight;
+            }
+        }
+        
+        function hideContextMenu() {
+            contextMenu.classList.add('hidden');
+            menuVisible = false;
+        }
+
+        // --- Window Control Functions ---
+
+        function performClose() {
+            hideMessage(); 
+            windowState = 'closed';
+            myWindow.style.display = 'none';
+            updateTaskbarEntry('closed');
+        }
+
+        function promptClose() {
+            showMessage('Closing this window will hide it, but you can always restore it by clicking the Start button or the taskbar entry. Proceed with closing?');
+        }
+
+        function minimizeWindow() {
+            windowState = 'minimized';
+            saveCurrentState();
+            myWindow.style.display = 'none';
+            updateTaskbarEntry('minimized');
+        }
+
+        function maximizeWindow() {
+            if (windowState === 'maximized') {
+                restoreWindow(true);
+            } else {
+                windowState = 'maximized';
+                saveCurrentState(); 
+                
+                myWindow.style.transition = 'all 0.1s ease-out';
+                myWindow.style.top = '0';
+                myWindow.style.left = '0';
+                myWindow.style.width = '100%';
+                myWindow.style.height = `calc(100vh - 28px)`; // 28px for taskbar
+                myWindow.style.transform = 'none';
+                myWindow.style.zIndex = 51; 
+                myWindow.style.display = 'flex';
+                
+                setTimeout(() => myWindow.style.transition = 'none', 100);
+                updateTaskbarEntry('maximized');
+            }
+        }
+        
+        function restoreWindow(fromMaximize = false) {
+            
+            if (windowState === 'closed') {
+                // If closed, reset to default state
+                myWindow.style.top = '10%';
+                myWindow.style.left = '50%';
+                myWindow.style.transform = 'translateX(-50%)';
+                myWindow.style.width = '500px';
+                myWindow.style.height = '350px';
+                windowState = 'normal';
+            } 
+            
+            if (windowState === 'maximized' && fromMaximize === false) {
+                 // Do nothing if trying to restore while maximized (only maximize button can trigger restore from maximized state)
+            } else if (windowState === 'maximized' || windowState === 'minimized' || fromMaximize === true) {
+                // Restore from maximized or minimized state
+                windowState = 'normal';
+                myWindow.style.transition = 'all 0.1s ease-out';
+
+                myWindow.style.width = `${savedSize.w}px`;
+                myWindow.style.height = `${savedSize.h}px`;
+                myWindow.style.top = `${savedPosition.y}px`;
+                myWindow.style.left = `${savedPosition.x}px`;
+                myWindow.style.transform = 'none';
+                
+                setTimeout(() => myWindow.style.transition = 'none', 100);
+            }
+            
+            myWindow.style.display = 'flex';
+            myWindow.style.zIndex = 51; 
+            updateTaskbarEntry(windowState);
+        }
+        
+        function toggleWindow() {
+            if (windowState === 'closed' || windowState === 'minimized') {
+                restoreWindow();
+            } else if (windowState === 'normal' || windowState === 'maximized') {
+                minimizeWindow();
+            }
+        }
+        
+        // --- RESIZING LOGIC (Refactored for All Edges/Corners) ---
+
+        function getResizeDirection(e) {
+            if (windowState === 'maximized') return '';
+
+            const rect = myWindow.getBoundingClientRect();
+            const x = e.clientX;
+            const y = e.clientY;
+
+            const nearTop = Math.abs(y - rect.top) < BORDER_TOLERANCE;
+            const nearBottom = Math.abs(y - rect.bottom) < BORDER_TOLERANCE;
+            const nearLeft = Math.abs(x - rect.left) < BORDER_TOLERANCE;
+            const nearRight = Math.abs(x - rect.right) < BORDER_TOLERANCE;
+            
+            // Do not allow resizing if clicking on the title bar
+            if (e.target.id === 'titleBar') return '';
+
+            // Check corners
+            if (nearTop && nearLeft) return 'nw';
+            if (nearTop && nearRight) return 'ne';
+            if (nearBottom && nearLeft) return 'sw';
+            if (nearBottom && nearRight) return 'se';
+
+            // Check edges
+            if (nearTop) return 'n';
+            if (nearBottom) return 's';
+            if (nearLeft) return 'w';
+            if (nearRight) return 'e';
+
+            return '';
+        }
+        
+        // MOUSE DOWN: Initiates Drag or Resize
+        document.addEventListener('mousedown', (e) => {
+            if (windowState === 'maximized') return;
+
+            resizeDirection = getResizeDirection(e);
+            if (resizeDirection) {
+                isResizing = true;
+                e.preventDefault();
+                return; 
+            }
+
+            // Existing dragging logic (only on title bar)
+            if (e.target.id === 'titleBar') {
+                isDragging = true;
+                offset.x = e.clientX - myWindow.offsetLeft;
+                offset.y = e.clientY - myWindow.offsetTop;
+                myWindow.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+            
+            // Desktop selection logic (handles click on desktop)
+            if (e.target === desktop && e.button === 0) { 
+                isSelecting = true;
+                startSelect = { x: e.clientX, y: e.clientY };
+                currentSelect = { x: e.clientX, y: e.clientY };
+                
+                selectionBox.style.left = `${e.clientX}px`;
+                selectionBox.style.top = `${e.clientY}px`;
+                selectionBox.style.width = '0px';
+                selectionBox.style.height = '0px';
+                selectionBox.classList.remove('hidden');
+            }
+        });
+        
+        // MOUSE MOVE: Handles dragging, resizing, and cursor changes
+        document.addEventListener('mousemove', (e) => {
+            if (isResizing && windowState !== 'maximized' && resizeDirection) {
+                let newX = myWindow.offsetLeft;
+                let newY = myWindow.offsetTop;
+                let newWidth = myWindow.offsetWidth;
+                let newHeight = myWindow.offsetHeight;
+                
+                // --- Resizing Logic ---
+                if (resizeDirection.includes('n')) {
+                    const dy = e.clientY - newY;
+                    newHeight -= dy;
+                    newY = e.clientY;
+                }
+                if (resizeDirection.includes('s')) {
+                    newHeight = e.clientY - newY;
+                }
+                if (resizeDirection.includes('w')) {
+                    const dx = e.clientX - newX;
+                    newWidth -= dx;
+                    newX = e.clientX;
+                }
+                if (resizeDirection.includes('e')) {
+                    newWidth = e.clientX - newX;
+                }
+                
+                // Apply constraints (Min Size)
+                if (newWidth >= minWidth) {
+                    myWindow.style.left = `${newX}px`;
+                    myWindow.style.width = `${newWidth}px`;
+                } else if (resizeDirection.includes('w')) {
+                    // Snap to min width, adjust position to prevent jump
+                    myWindow.style.left = `${myWindow.offsetLeft + (newWidth - minWidth)}px`;
+                    myWindow.style.width = `${minWidth}px`;
+                } else if (resizeDirection.includes('e')) {
+                    myWindow.style.width = `${minWidth}px`;
+                }
+
+
+                if (newHeight >= minHeight) {
+                    myWindow.style.top = `${newY}px`;
+                    myWindow.style.height = `${newHeight}px`;
+                } else if (resizeDirection.includes('n')) {
+                    // Snap to min height, adjust position to prevent jump
+                    myWindow.style.top = `${myWindow.offsetTop + (newHeight - minHeight)}px`;
+                    myWindow.style.height = `${minHeight}px`;
+                } else if (resizeDirection.includes('s')) {
+                    myWindow.style.height = `${minHeight}px`;
+                }
+                
+                saveCurrentState();
+
+            } else if (isDragging && windowState !== 'maximized') {
+                // --- Dragging Logic ---
+                let newX = e.clientX - offset.x;
+                let newY = e.clientY - offset.y;
+
+                // Keep window within bounds
+                newX = Math.max(0, newX);
+                newY = Math.max(0, newY);
+                newY = Math.min(newY, window.innerHeight - myWindow.offsetHeight - 28); 
+
+                myWindow.style.left = `${newX}px`;
+                myWindow.style.top = `${newY}px`;
+                saveCurrentState(); 
+            }
+            
+            // --- Cursor Update Logic ---
+            if (!isResizing && !isDragging) {
+                const direction = getResizeDirection(e);
+                if (direction) {
+                    myWindow.style.cursor = direction + '-resize';
+                } else if (e.target.id !== 'titleBar') {
+                    // Only reset if not hovering over the title bar
+                    myWindow.style.cursor = 'default';
+                }
+            }
+            
+            // --- Selection Logic ---
+            if (isSelecting) {
+                currentSelect = { x: e.clientX, y: e.clientY };
+
+                const x = Math.min(startSelect.x, currentSelect.x);
+                const y = Math.min(startSelect.y, currentSelect.y);
+                const w = Math.abs(startSelect.x - currentSelect.x);
+                const maxH = window.innerHeight - 28 - y;
+                const h = Math.min(Math.abs(startSelect.y - currentSelect.y), maxH);
+                
+                selectionBox.style.left = `${x}px`;
+                selectionBox.style.top = `${y}px`;
+                selectionBox.style.width = `${w}px`;
+                selectionBox.style.height = `${h}px`;
+            }
+        });
+
+        // MOUSE UP: Ends Drag/Resize/Selection
+        document.addEventListener('mouseup', (e) => {
+            isDragging = false;
+            isResizing = false;
+            resizeDirection = '';
+            myWindow.style.cursor = 'default';
+            
+            if (isSelecting) {
+                isSelecting = false;
+                selectionBox.classList.add('hidden');
+            }
+        });
+        
+        // --- Desktop Interaction (Selection & Right-Click) ---
+
+        desktop.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            selectionBox.classList.add('hidden');
+
+            contextMenu.style.left = `${e.clientX}px`;
+            contextMenu.style.top = `${e.clientY}px`;
+            contextMenu.classList.remove('hidden');
+            menuVisible = true;
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (menuVisible && !contextMenu.contains(e.target)) {
+                hideContextMenu();
+            }
+        });
+
+
+        // --- Touch Support for Dragging and Resizing (Simplified for mobile) ---
+        // This is necessary for compliance but complex directional resizing is less practical on small screens. 
+        // We'll prioritize basic drag and corner resize (SE corner) for touch.
+
+        myWindow.addEventListener('touchstart', (e) => {
+            if (windowState === 'maximized') return;
+
+            const direction = getResizeDirection(e.touches[0]);
+            
+            if (direction) {
+                 isResizing = true;
+                 resizeDirection = direction;
+                 e.preventDefault();
+                 return;
+            }
+
+            if (e.target.id === 'titleBar') {
+                const touch = e.touches[0];
+                isDragging = true;
+                offset.x = touch.clientX - myWindow.offsetLeft;
+                offset.y = touch.clientY - myWindow.offsetTop;
+                e.preventDefault();
+            }
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (isResizing && windowState !== 'maximized' && resizeDirection) {
+                // Reusing the desktop mousemove logic for touch resizing
+                e.clientX = e.touches[0].clientX;
+                e.clientY = e.touches[0].clientY;
+                document.dispatchEvent(new MouseEvent('mousemove', {
+                    clientX: e.touches[0].clientX,
+                    clientY: e.touches[0].clientY,
+                    bubbles: true 
+                }));
+                e.preventDefault();
+            } else if (isDragging && windowState !== 'maximized') {
+                const touch = e.touches[0];
+                let newX = touch.clientX - offset.x;
+                let newY = touch.clientY - offset.y;
+
+                newX = Math.max(0, newX);
+                newY = Math.max(0, newY);
+                newY = Math.min(newY, window.innerHeight - myWindow.offsetHeight - 28);
+
+                myWindow.style.left = `${newX}px`;
+                myWindow.style.top = `${newY}px`;
+                saveCurrentState();
+                e.preventDefault();
+            }
+            // Touch selection logic is already handled in mousedown/mousemove emulation
+        });
+
+        document.addEventListener('touchend', () => {
+            isDragging = false;
+            isResizing = false;
+            resizeDirection = '';
+            
+            if (isSelecting) {
+                isSelecting = false;
+                selectionBox.classList.add('hidden');
+            }
+        });
+        
+        desktop.addEventListener('touchstart', (e) => {
+            if (e.target === desktop && e.touches.length === 1) {
+                if (menuVisible) {
+                    hideContextMenu();
+                }
+                // Emulate mousedown on desktop for selection start
+                document.dispatchEvent(new MouseEvent('mousedown', {
+                    clientX: e.touches[0].clientX,
+                    clientY: e.touches[0].clientY,
+                    button: 0, // Left click
+                    bubbles: true
+                }));
+                e.preventDefault(); 
+            }
+        }, { passive: false });
+
+
+        // --- Custom Message Box (No alert()) ---
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+
+        function showMessage(message, isConfirmation = true) {
+            messageText.textContent = message;
+            
+            document.getElementById('messageActions').style.display = isConfirmation ? 'flex' : 'none';
+            
+            if (!isConfirmation) {
+                const actionsDiv = document.getElementById('messageActions');
+                actionsDiv.style.display = 'flex';
+                actionsDiv.innerHTML = '<button class="button-style w-20" onclick="hideMessage()">OK</button>';
+                
+                messageBox.querySelector('.title-bar').style.background = 'linear-gradient(90deg, #0000AA, #0000AA)';
+                messageBox.querySelector('.title-bar').children[0].textContent = 'ℹ️ Information';
+            } else {
+                const actionsDiv = document.getElementById('messageActions');
+                actionsDiv.innerHTML = '<button id="msgYesButton" class="button-style w-20" onclick="performClose()">Yes</button><button id="msgNoButton" class="button-style w-20" onclick="hideMessage()">No</button>';
+                
+                messageBox.querySelector('.title-bar').style.background = 'linear-gradient(90deg, #A80000, #A80000)';
+                messageBox.querySelector('.title-bar').children[0].textContent = '⚠️ Warning';
+            }
+
+            messageBox.classList.remove('hidden');
+        }
+
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // --- Initial Setup ---
+        window.onload = function() {
+            updateClock();
+            clockInterval = setInterval(updateClock, 1000); // Store interval handle
+            
+            setTimeout(() => {
+                savedPosition.x = myWindow.offsetLeft;
+                savedPosition.y = myWindow.offsetTop;
+                savedSize.w = myWindow.offsetWidth;
+                savedSize.h = myWindow.offsetHeight;
+                updateTaskbarEntry(windowState);
+            }, 10);
+        };
+        
+        window.addEventListener('resize', () => {
+            if (windowState === 'maximized') {
+                myWindow.style.height = `calc(100vh - 28px)`;
+                myWindow.style.width = '100%';
+            }
+        });
+
+    </script>
+</body>
+</html>
